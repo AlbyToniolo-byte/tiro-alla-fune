@@ -49,6 +49,43 @@ func person(x: CGFloat, back: CGFloat, lean: CGFloat, color: NSColor, ropeY: CGF
     NSBezierPath(ovalIn: NSRect(x: neck.x + back * lean * 0.25 - 3, y: neck.y + 0.5, width: 6, height: 6)).fill()
 }
 
+/// Icona 1024×1024 per build.sh: le due squadre che tirano, con gli stessi omini del gioco ingranditi.
+@MainActor func renderIcon(to path: String) {
+    let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: 1024, pixelsHigh: 1024, bitsPerSample: 8, samplesPerPixel: 4,
+                               hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0)!
+    NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: rep)
+    let box = NSRect(x: 100, y: 100, width: 824, height: 824) // margini e raggio della griglia delle icone macOS
+    let shape = NSBezierPath(roundedRect: box, xRadius: 185, yRadius: 185)
+
+    NSGraphicsContext.saveGraphicsState() // ombra sotto il riquadro, come le icone di sistema
+    let shadow = NSShadow()
+    shadow.shadowColor = NSColor.black.withAlphaComponent(0.35); shadow.shadowBlurRadius = 24; shadow.shadowOffset = NSSize(width: 0, height: -10)
+    shadow.set(); NSColor.black.setFill(); shape.fill()
+    NSGraphicsContext.restoreGraphicsState()
+
+    shape.addClip()
+    func rgb(_ r: CGFloat, _ g: CGFloat, _ b: CGFloat) -> NSColor { NSColor(srgbRed: r, green: g, blue: b, alpha: 1) }
+    NSGradient(starting: rgb(0.13, 0.27, 0.6), ending: rgb(0.05, 0.1, 0.27))!.draw(in: NSRect(x: 100, y: 100, width: 412, height: 824), angle: -90)
+    NSGradient(starting: rgb(0.6, 0.14, 0.16), ending: rgb(0.27, 0.05, 0.07))!.draw(in: NSRect(x: 512, y: 100, width: 412, height: 824), angle: -90)
+
+    // il resto in unità della Touch Bar, con l'origine al centro in basso
+    let tr = NSAffineTransform(); tr.translateX(by: 512, yBy: 330); tr.scale(by: 16); tr.concat()
+    NSColor.white.withAlphaComponent(0.3).setFill()
+    NSRect(x: -0.15, y: 1.5, width: 0.3, height: 35).fill()
+    NSColor.black.withAlphaComponent(0.3).setFill() // terreno sotto i piedi
+    NSRect(x: -30, y: -30, width: 60, height: 31.5).fill()
+    for side in 0...1 {
+        person(x: dir(side) * 11, back: dir(side), lean: 5, color: teams[side].color.blended(withFraction: 0.25, of: .white)!, ropeY: 12)
+    }
+    NSColor(srgbRed: 0.8, green: 0.64, blue: 0.4, alpha: 1).setFill()
+    NSRect(x: -30, y: 11, width: 60, height: 2).fill()
+    let flag = NSBezierPath()
+    flag.move(to: NSPoint(x: 0, y: 12)); flag.line(to: NSPoint(x: -3.5, y: 3)); flag.line(to: NSPoint(x: 3.5, y: 3)); flag.close()
+    NSColor.systemYellow.setFill(); flag.fill()
+
+    try! rep.representation(using: .png, properties: [:])!.write(to: URL(fileURLWithPath: path))
+}
+
 final class RopeView: NSView {
     var match = Match()
     var score = [0, 0]
@@ -204,6 +241,7 @@ if CommandLine.arguments.contains("--selftest") {
 }
 
 MainActor.assumeIsolated {
+    if let i = CommandLine.arguments.firstIndex(of: "--icon") { renderIcon(to: CommandLine.arguments[i + 1]); exit(0) }
     let app = NSApplication.shared
     let delegate = AppDelegate()
     app.delegate = delegate

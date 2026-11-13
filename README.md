@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/icona.png" width="128" alt="Icona di Tiro alla fune"></p>
+
 # Tiro alla fune
 
 Un gioco a due per la **Touch Bar** del MacBook Pro: ogni giocatore martella la propria metà della barra e la corda si sposta verso chi tira più veloce. La grafica è disegnata interamente dal codice: nessun file di immagine.
